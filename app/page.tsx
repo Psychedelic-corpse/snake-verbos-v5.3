@@ -76,7 +76,7 @@ const getRandomTense = (): number => Math.floor(Math.random() * 8) + 1;
 const getTenseLabel = (tenseId: number): string => TENSES[String(tenseId) as keyof typeof TENSES] || 'Presente';
 
 const generateReportText = (players: Player[]): string => {
-  const lines: string[] = ['Ahoj! Zahrajeme si hru Conjugando Verbos v5.5! 🎲🐍'];
+  const lines: string[] = ['Ahoj! Zahrajeme si hru Con-Jugando Verbos v5.5! 🎲🐍'];
   lines.push('');
 
   players.forEach((player) => {
@@ -340,7 +340,7 @@ const MainMenu: React.FC<{
       {/* Header */}
       <div className="text-center mb-4">
         <h1 className={`text-6xl font-black mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          🐍 Conjugando Verbos
+          🐍 Con-Jugando Verbos
         </h1>
         <p className={`text-2xl font-bold ${isDark ? 'text-cyan-300' : 'text-cyan-600'}`}>
           v5.5
