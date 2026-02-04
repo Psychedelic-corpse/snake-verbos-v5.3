@@ -15,6 +15,10 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Conjugando Verbos",
   description: "Juego educativo de español",
+  icons: {
+    icon: '/icon.png',
+    apple: '/icon.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
