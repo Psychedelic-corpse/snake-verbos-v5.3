@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Menu, RotateCcw, Send, Moon, Sun, Volume2, Home } from 'lucide-react';
+import { RotateCcw, Moon, Sun, Home, Copy, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // ============================================================================
@@ -56,7 +56,7 @@ const VERB_LIST = [
   'Bañarse', 'Pagar', 'Casarse', 'LLEGADA'
 ];
 
-const TENSES = {
+const TENSES: Record<string, string> = {
   '1': 'Presente',
   '2': 'Futuro (Perífrasis)',
   '3': 'P. Perfecto Compuesto',
@@ -73,10 +73,10 @@ const TENSES = {
 
 const getRandomTense = (): number => Math.floor(Math.random() * 8) + 1;
 
-const getTenseLabel = (tenseId: number): string => TENSES[tenseId as keyof typeof TENSES] || 'Presente';
+const getTenseLabel = (tenseId: number): string => TENSES[String(tenseId) as keyof typeof TENSES] || 'Presente';
 
-const generateWhatsAppMessage = (players: Player[]): string => {
-  const lines: string[] = ['Ahoj! Zahrajeme si hru Conjugando Verbos v5.3! 🎲🐍'];
+const generateReportText = (players: Player[]): string => {
+  const lines: string[] = ['Ahoj! Zahrajeme si hru Conjugando Verbos v5.5! 🎲🐍'];
   lines.push('');
 
   players.forEach((player) => {
@@ -89,18 +89,250 @@ const generateWhatsAppMessage = (players: Player[]): string => {
 
   lines.push('Gratulujeme! 🎉');
 
-  return lines.join('%0A');
+  return lines.join('\n');
 };
 
 // ============================================================================
 // COMPONENTS
 // ============================================================================
 
+const RulesModal: React.FC<{
+  onClose: () => void;
+  theme: ThemeMode;
+}> = ({ onClose, theme }) => {
+  const isDark = theme === 'dark';
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.8, y: 50 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.8, y: 50 }}
+        onClick={(e: any) => e.stopPropagation()}
+        className={`w-full max-w-2xl max-h-[80vh] overflow-y-auto rounded-xl shadow-2xl p-8 ${
+          isDark ? 'bg-slate-800' : 'bg-white'
+        }`}
+      >
+        {/* Title */}
+        <h2 className={`text-4xl font-black mb-6 text-center ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          📖 Guía del Juego
+        </h2>
+
+        {/* Content Sections */}
+        <div className={`space-y-6 ${isDark ? 'text-slate-100' : 'text-slate-800'}`}>
+          {/* Section 1: Objetivo */}
+          <div className={`p-4 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
+            <h3 className="text-2xl font-bold mb-3 text-cyan-500">🎯 Objetivo</h3>
+            <p className="text-lg leading-relaxed">
+              Llega a la casilla <strong>"LLEGADA"</strong> (casilla 60) conjugando correctamente los verbos españoles. 
+              Eres Linda (Petróleo/Cyan) o Leus (Rosa/Pink) - ¡cada jugador tiene su propio camino en el tablero!
+            </p>
+          </div>
+
+          {/* Section 2: Turnos */}
+          <div className={`p-4 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
+            <h3 className="text-2xl font-bold mb-3 text-rose-500">🎲 Cómo Jugar</h3>
+            <ul className="space-y-2 text-lg">
+              <li>
+                <strong>Lanza el Dado:</strong> Presiona "🎲 Lanzar Dado" para generar un número aleatorio (1-6).
+              </li>
+              <li>
+                <strong>Movimiento:</strong> Avanzas esa cantidad de casillas por el tablero serpiente.
+              </li>
+              <li>
+                <strong>Tiempo Verbal:</strong> Se selecciona automáticamente un tiempo verbal (Presente, Futuro, Pretérito, etc.) de 8 opciones.
+              </li>
+              <li>
+                <strong>Conjugación:</strong> Confirma la conjugación correcta del verbo en el tiempo indicado.
+              </li>
+            </ul>
+          </div>
+
+          {/* Section 3: Smart Learning */}
+          <div className={`p-4 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
+            <h3 className="text-2xl font-bold mb-3 text-yellow-500">🧠 Aprendizaje Inteligente</h3>
+            <p className="text-lg leading-relaxed mb-3">
+              <strong>¡Aquí es donde la magia ocurre!</strong> Si aterrizas en:
+            </p>
+            <ul className="space-y-2 text-lg pl-4 border-l-4 border-yellow-400">
+              <li>
+                <strong>Una casilla ya usada:</strong> El juego automáticamente te asigna un <strong>nuevo tiempo verbal</strong> para que practiques más formas de conjugación.
+              </li>
+              <li>
+                <strong>La misma casilla que otro jugador (colisión):</strong> Se genera un tiempo diferente para ambos - ¡más aprendizaje!
+              </li>
+            </ul>
+            <p className="text-lg leading-relaxed mt-3">
+              Esto garantiza que practiques múltiples tiempos verbales y evites repetir lo mismo.
+            </p>
+          </div>
+
+          {/* Section 4: Reporte */}
+          <div className={`p-4 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-slate-100'}`}>
+            <h3 className="text-2xl font-bold mb-3 text-green-500">📲 Reporte al Maestro</h3>
+            <p className="text-lg leading-relaxed">
+              Al completar el juego, verás un botón <strong>"Generar Reporte"</strong> que abre un modal con un resumen 
+              de todos los verbos y tiempos que practicaste. ¡Puedes compartirlo o copiarlo fácilmente!
+            </p>
+          </div>
+
+          {/* Pro Tips */}
+          <div className={`p-4 rounded-lg border-2 ${isDark ? 'bg-slate-700 border-cyan-500' : 'bg-cyan-50 border-cyan-300'}`}>
+            <h3 className="text-2xl font-bold mb-3">💡 Pro Tips</h3>
+            <ul className="space-y-2 text-lg">
+              <li>✨ Usa el botón de tema (🌙/☀️) para cambiar entre Modo Claro y Oscuro.</li>
+              <li>↩️ Presiona el botón de deshacer para revertir tu último movimiento.</li>
+              <li>🏠 El botón "Ir al Menú Principal" reinicia el juego en cualquier momento.</li>
+              <li>🐍 El tablero es una serpiente: fila 1 va derecha→izquierda, fila 2 izquierda→derecha, ¡y así alternando!</li>
+            </ul>
+          </div>
+        </div>
+
+        {/* Close Button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onClose}
+          className="w-full mt-8 px-6 py-3 bg-gradient-to-r from-cyan-600 to-cyan-700 text-white font-bold text-lg rounded-lg hover:shadow-lg transition-all"
+        >
+          ✓ Entendido / Cerrar
+        </motion.button>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+const ReportModal: React.FC<{
+  reportText: string;
+  onClose: () => void;
+  theme: ThemeMode;
+}> = ({ reportText, onClose, theme }) => {
+  const [copyStatus, setCopyStatus] = useState(false);
+  const isDark = theme === 'dark';
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          text: reportText,
+          title: 'Conjugando Verbos Reporte'
+        });
+      } catch (err) {
+        console.log('Share dismissed:', err);
+      }
+    } else {
+      // Fallback to copy
+      handleCopy();
+    }
+  };
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(reportText);
+      setCopyStatus(true);
+      setTimeout(() => setCopyStatus(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      alert('Error al copiar el texto');
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.8, y: 50 }}
+        animate={{ scale: 1, y: 0 }}
+        exit={{ scale: 0.8, y: 50 }}
+        onClick={(e: any) => e.stopPropagation()}
+        className={`w-full max-w-2xl max-h-[80vh] rounded-xl shadow-2xl p-8 flex flex-col ${
+          isDark ? 'bg-slate-800' : 'bg-white'
+        }`}
+      >
+        {/* Header */}
+        <h2 className={`text-3xl font-black mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          📋 Resumen de la Partida
+        </h2>
+
+        {/* Report Content (Scrollable) */}
+        <div
+          className={`flex-1 overflow-y-auto p-4 rounded-lg mb-6 font-mono text-sm whitespace-pre-wrap ${
+            isDark ? 'bg-slate-700 text-slate-100' : 'bg-slate-100 text-slate-900'
+          }`}
+        >
+          {reportText}
+        </div>
+
+        {/* Toast Notification */}
+        <AnimatePresence>
+          {copyStatus && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="mb-4 p-3 bg-green-500 text-white rounded-lg font-bold text-center"
+            >
+              ✓ ¡Texto copiado!
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Buttons */}
+        <div className="flex gap-3 flex-col">
+          {/* iOS/Share Button */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleShare}
+            className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+          >
+            <Share2 size={24} />
+            📤 Compartir / Guardar Nota (iOS)
+          </motion.button>
+
+          {/* Copy Button */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={handleCopy}
+            className="w-full px-6 py-4 bg-gradient-to-r from-slate-600 to-slate-700 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+          >
+            <Copy size={24} />
+            📋 Copiar Texto (Android/Linda)
+          </motion.button>
+
+          {/* Close Button */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={onClose}
+            className="w-full px-6 py-3 bg-slate-400 text-slate-900 font-bold text-lg rounded-lg hover:bg-slate-500 transition-all"
+          >
+            ← Volver
+          </motion.button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+};
+
 const MainMenu: React.FC<{
   onStart: (mode: 'single' | 'dual') => void;
   theme: ThemeMode;
   onThemeToggle: () => void;
 }> = ({ onStart, theme, onThemeToggle }) => {
+  const [showRules, setShowRules] = useState(false);
   const isDark = theme === 'dark';
 
   return (
@@ -111,7 +343,7 @@ const MainMenu: React.FC<{
           🐍 Conjugando Verbos
         </h1>
         <p className={`text-2xl font-bold ${isDark ? 'text-cyan-300' : 'text-cyan-600'}`}>
-          v5.3
+          v5.5
         </p>
       </div>
 
@@ -135,6 +367,20 @@ const MainMenu: React.FC<{
         </motion.button>
       </div>
 
+      {/* Rules Button */}
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setShowRules(true)}
+        className={`px-6 py-3 font-bold text-lg rounded-lg shadow-lg transition-all ${
+          isDark
+            ? 'bg-slate-700 text-slate-100 hover:bg-slate-600'
+            : 'bg-slate-200 text-slate-900 hover:bg-slate-300'
+        }`}
+      >
+        📖 Cómo Jugar
+      </motion.button>
+
       {/* Theme Toggle */}
       <motion.button
         whileHover={{ scale: 1.1 }}
@@ -143,6 +389,11 @@ const MainMenu: React.FC<{
       >
         {isDark ? <Sun size={24} /> : <Moon size={24} />}
       </motion.button>
+
+      {/* Rules Modal */}
+      <AnimatePresence>
+        {showRules && <RulesModal onClose={() => setShowRules(false)} theme={theme} />}
+      </AnimatePresence>
     </div>
   );
 };
@@ -173,9 +424,9 @@ const GameBoard: React.FC<{
 
   // Render board grid
   const renderBoard = () => {
-    const rows: JSX.Element[] = [];
+    const rows: React.ReactNode[] = [];
     for (let row = 0; row < 6; row++) {
-      const cols: JSX.Element[] = [];
+      const cols: React.ReactNode[] = [];
       const isRightToLeft = row % 2 === 0;
 
       for (let col = 0; col < 10; col++) {
@@ -359,9 +610,9 @@ const SummaryScreen: React.FC<{
   onMenuClick: () => void;
   theme: ThemeMode;
 }> = ({ players, onMenuClick, theme }) => {
+  const [showReport, setShowReport] = useState(false);
   const isDark = theme === 'dark';
-  const whatsappMessage = generateWhatsAppMessage(players);
-  const whatsappLink = `https://wa.me/?text=${whatsappMessage}`;
+  const reportText = generateReportText(players);
 
   useEffect(() => {
     confetti({
@@ -416,28 +667,36 @@ const SummaryScreen: React.FC<{
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-4 mt-6">
-        <motion.a
-          href={whatsappLink}
-          target="_blank"
-          rel="noopener noreferrer"
+      <div className="flex gap-4 mt-6 flex-col w-full max-w-md">
+        <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          onClick={() => setShowReport(true)}
+          className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transition-all"
         >
-          <Send size={20} />
-          Odeslat učiteli
-        </motion.a>
+          📄 Generar Reporte
+        </motion.button>
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={onMenuClick}
-          className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white font-bold rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
+          className="w-full px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
         >
           <Home size={20} />
           Ir al Menú Principal
         </motion.button>
       </div>
+
+      {/* Report Modal */}
+      <AnimatePresence>
+        {showReport && (
+          <ReportModal
+            reportText={reportText}
+            onClose={() => setShowReport(false)}
+            theme={theme}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -495,7 +754,7 @@ export default function Page() {
 
   const handleRollDice = useCallback(() => {
     const move = Math.floor(Math.random() * 6) + 1;
-    let tense = getRandomTense();
+    const tense = getRandomTense();
 
     setGameState((prev) => ({
       ...prev,
